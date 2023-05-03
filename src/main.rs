@@ -1,7 +1,7 @@
 use std::{fmt::Debug, future::Future, str, time::Instant};
 use tokio::io::BufReader;
 
-const ITER: usize = 100000;
+const ITER: usize = 1_000_000;
 const MSG: &str = "Hello, World!\n";
 
 const HELP: &str = "Please run with `--release` flag for accurate results.
@@ -99,7 +99,8 @@ mod fastwebsockets_banchmark {
     async fn client(stream: Stream) -> Result<()> {
         let mut ws = WebSocket::after_handshake(stream, Role::Client);
         ws.set_auto_pong(true);
-        ws.set_writev(true);
+        ws.set_auto_apply_mask(false);
+        ws.set_writev(false);
         ws.set_auto_close(true);
 
         let time = Instant::now();
@@ -107,8 +108,8 @@ mod fastwebsockets_banchmark {
             ws.write_frame(Frame::new(
                 true,
                 OpCode::Text,
-                Some(rand::random()),
-                MSG.into(),
+                None,
+                MSG.as_bytes().into(),
             ))
             .await?;
         }
@@ -122,8 +123,8 @@ mod fastwebsockets_banchmark {
         ws.write_frame(Frame::new(
             true,
             OpCode::Close,
-            Some(rand::random()),
-            Vec::new(),
+            None,
+            vec![].into(),
         ))
         .await?;
 
@@ -133,9 +134,9 @@ mod fastwebsockets_banchmark {
 
     async fn server(stream: Stream) -> Result<()> {
         let mut ws = WebSocket::after_handshake(stream, Role::Server);
-        ws.set_auto_apply_mask(true);
+        ws.set_auto_apply_mask(false);
         ws.set_auto_pong(true);
-        ws.set_writev(true);
+        ws.set_writev(false);
         ws.set_auto_close(true);
 
         loop {
